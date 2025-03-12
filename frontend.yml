@@ -1,6 +1,6 @@
 ---
 - name: create a Frontend
-  hosts: 172.31.39.146
+  hosts: 172.31.38.18
   become: true
   
   tasks:

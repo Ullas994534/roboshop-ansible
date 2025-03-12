@@ -1,6 +1,6 @@
 ---
  - name: create the roboshop
-   hosts: 172.31.33.228
+   hosts: 172.31.40.150
    become: true
    tasks:
      - name: set prompt

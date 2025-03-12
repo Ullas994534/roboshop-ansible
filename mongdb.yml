@@ -1,6 +1,6 @@
 ---
  - name: create the roboshop on mongdb
-   hosts: 172.31.43.51
+   hosts: 172.31.41.246
    become: true
    tasks:
   
