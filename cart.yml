@@ -1,10 +1,15 @@
 ---
  - name: create a RoboShop 
-   hosts: cart
+   hosts: 172.31.33.200
    become: true
    tasks:
+    - name: Copy user.service file to /etc/systemd/system/
+      ansible.builtin.template:
+        src: cart.service
+        dest: /etc/systemd/system/cart.service
+
     - name: set prompt
-      ansible.buildin.command: set-prompt cart
+      ansible.builtin.command: set-prompt cart
       
     - name: Disable existing Node.js module
       command: dnf module disable nodejs -y
@@ -53,29 +58,25 @@
     - name: Reload systemd daemon
       command: systemctl daemon-reload
 
-    - name: Enable and Start Cart service
-      systemd:
-        name: cart
-        enabled: yes
-        state: started
-
-    - name: download the mysql content
-      ansible.buildin.get_url:
+    - name: download the cart content
+      ansible.builtin.get_url:
        url: https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip
        dest: /tmp/cart.zip
-
+    - name: extract
+      ansible.builtin.unarchive:
+        src: /tmp/cart.zip
+        dest: /app
+        remote_src: yes  
     - name: download the npm
-      ansible.buildin.dnf:
-       name: npm
-       state: installed
+      ansible.builtin.dnf:
+        name: npm
+        state: installed
 
-    - name: reload the daemon-reload
-      ansible.buildin.service:
-       name: daemon-reload
-      state: reload
-      
+    - name: Reload systemd daemon
+      ansible.builtin.command: systemctl daemon-reload
+
     - name: start and enable cart
-      ansible.buildin.dnf:
-       name: cart
-       state: started
-       enabled: yes
+      ansible.builtin.service:
+        name: cart.service
+        state: restarted
+        enabled: yes

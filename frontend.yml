@@ -1,6 +1,6 @@
 ---
 - name: create a Frontend
-  hosts: frontend
+  hosts: 172.31.39.146
   become: true
   
   tasks:
@@ -16,10 +16,9 @@
         state: present
       
     - name: start and enable nginx
-      ansible.buildin.dnf:
+      ansible.builtin.systemd_service:
         name: nginx
         state: started
-        enabled: yes
      
     - name: remove the content of nginx
       file:
@@ -27,7 +26,7 @@
         state: absent
 
     - name: download the frontend content
-      ansible.buildin.get_url:
+      ansible.builtin.get_url:
         url: https://roboshop-artifacts.s3.amazonaws.com/frontend-v3.zip
         dest: /tmp/frontend.zip
 
@@ -40,12 +39,12 @@
     - name: Copy file with owner and permissions
       ansible.builtin.copy:
         src: nginx.conf
-        dest: /usr/share/nginx/html
+        dest: /etc/nginx/nginx.conf
  
     - name: Restart Nginx
-      ansible.buildin.service:
-       name: nginx
-       state: restarted       
-
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: started       
+        enabled: yes
 
 

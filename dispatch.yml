@@ -1,85 +1,70 @@
----
-- name: create a RoboShop Dispatch
-  hosts: dispatch
+- name: Setup Dispatch host
+  hosts: 172.31.40.15
   become: true
-  tasks:
-    - name: set prompt
-      ansible.buildin.command: set-prompt shipping
+  tasks: 
 
-    - name: Install GoLang
-      dnf:
+    - name: Set prompt
+      ansible.builtin.shell: set-prompt Dispatch
+    
+    - name: Install golang
+      ansible.builtin.dnf:
         name: golang
-        state: present
+        state: installed
 
-    - name: Add application user 'roboshop'
-      user:
+    - name: Add user roboshop
+      ansible.builtin.user:
         name: roboshop
-        system: yes
-        shell: /sbin/nologin
-        create_home: no
 
-    - name: Create application directory
-      file:
+    - name: Create directory /app
+      ansible.builtin.file:
         path: /app
         state: directory
         owner: roboshop
         group: roboshop
         mode: '0755'
 
-    - name: Download Dispatch microservice application code
-      get_url:
-        url: https://roboshop-artifacts.s3.amazonaws.com/dispatch-v3.zip
-        dest: /tmp/dispatch.zip
-
-    - name: Extract application code
-      unarchive:
-        src: /tmp/dispatch.zip
-        dest: /app
-        remote_src: yes
-        owner: roboshop
-        group: roboshop
-
-    - name: Initialize Go module
-      command: go mod init dispatch
-      args:
-        chdir: /app
-
-    - name: Get Go dependencies
-      command: go get
-      args:
-        chdir: /app
-
-    - name: Build Dispatch Go application
-      command: go build
-      args:
-        chdir: /app
-
-    - name: Download the dispatch content
+    - name: Download dispatch
       ansible.builtin.get_url:
-        url: https://roboshop-artifacts.s3.amazonaws.com/dispatch-v3.zip
+        url: https://roboshop-artifacts.s3.amazonaws.com/dispatch-v3.zip 
         dest: /tmp/dispatch.zip
-        mode: '0644'
 
-    - name: Extract dispatch content
+    - name: Extract dispatch into /app
       ansible.builtin.unarchive:
         src: /tmp/dispatch.zip
         dest: /app
         remote_src: yes
         owner: roboshop
-        group: roboshop
+        group: roboshop  
 
-    - name: Copy systemd service file
-      ansible.builtin.copy:
+    - name: Initialize Go module
+      ansible.builtin.command: go mod init dispatch
+      args:
+        chdir: /app
+      become_user: roboshop
+
+    - name: Download dependencies
+      ansible.builtin.command: go get 
+      args:
+        chdir: /app
+      become_user: roboshop
+
+    - name: Build Dispatch application
+      ansible.builtin.command: go build
+      args:
+        chdir: /app
+      become_user: roboshop
+
+    - name: Copy dispatch.service file to /etc/systemd/system/
+      ansible.builtin.template:
         src: dispatch.service
         dest: /etc/systemd/system/dispatch.service
-        mode: '0644'
 
     - name: Reload systemd daemon
-      ansible.builtin.systemd:
-        daemon_reload: yes
+      ansible.builtin.command: systemctl daemon-reload
 
-    - name: Enable and start dispatch service
-      ansible.builtin.systemd:
+    - name: Start and enable dispatch service
+      ansible.builtin.systemd_service:
         name: dispatch
-        enabled: yes
         state: started
+        enabled: yes
+

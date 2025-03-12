@@ -18,6 +18,8 @@
        ansible.builtin.dnf:
          name: nodejs
          state: installed
+       args:
+         chdir: /app
      - name: add the user with roboshop
        ansible.builtin.user:
          name: roboshop
@@ -26,17 +28,13 @@
      - name: Creates directory
        ansible.builtin.file:
          path: /app
-         state: directory
+         state: present
         
      - name: download the catalogure content
        ansible.builtin.get_url:
          url: https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip
          dest: /tmp/catalogue.zip
-     - name: extract the catalogue 
-       ansible.builtin.unarchive:
-         src: /tmp/catalogue.zip
-         dest: /app
-         remote_src: yes  
+        
      - name: download the npm
        ansible.builtin.dnf:
          name: npm

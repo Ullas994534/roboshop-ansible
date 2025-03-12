@@ -1,9 +1,10 @@
+---
 - name: create a RoboShop 
-  hosts: shipping
+  hosts: 172.31.43.89
   become: true
   tasks:
     - name: set prompt
-      ansible.buildin.command: set-prompt shipping
+      ansible.builtin.command: set-prompt shipping
 
     - name: Install Maven (which includes Java)
       dnf:
@@ -80,15 +81,15 @@
 
     - name: Load database schema
       ansible.builtin.command:
-        cmd: mysql -h <MYSQL-SERVER-IPADDRESS> -uroot -pRoboShop@1 < /app/db/schema.sql
+        cmd: mysql -h 172.31.40.120 -uroot -pRoboShop@1 < /app/db/schema.sql
 
     - name: Create application user in MySQL
       ansible.builtin.command:
-        cmd: mysql -h <MYSQL-SERVER-IPADDRESS> -uroot -pRoboShop@1 < /app/db/app-user.sql
+        cmd: mysql -h 172.31.40.120 -uroot -pRoboShop@1 < /app/db/app-user.sql
 
     - name: Load master data into database
       ansible.builtin.command:
-        cmd: mysql -h <MYSQL-SERVER-IPADDRESS> -uroot -pRoboShop@1 < /app/db/master-data.sql
+        cmd: mysql -h 172.31.40.120 -uroot -pRoboShop@1 < /app/db/master-data.sql
 
     - name: Restart shipping service
       ansible.builtin.systemd:

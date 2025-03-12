@@ -1,10 +1,10 @@
 ---
  - name: create a RoboShop
-   hosts: user
+   hosts: 172.31.38.215
    become: true
    tasks:
     - name: set prompt
-      ansible.buildin.command: set-prompt user
+      ansible.builtin.command: set-prompt user
       
     - name: Disable existing Node.js module
       command: dnf module disable nodejs -y
@@ -15,7 +15,7 @@
     - name: Install Node.js
       dnf:
         name: nodejs
-        state: present
+        state: installed
 
     - name: Add application user 'roboshop'
       user:
@@ -56,28 +56,33 @@
         state: directory
 
     - name: download the catalogure content
-      ansible.buildin.get_url:
+      ansible.builtin.get_url:
        url: https://roboshop-artifacts.s3.amazonaws.com/user-v3.zip
        dest: /tmp/user.zip
       
+    - name: Extract application code
+      ansible.builtin.unarchive:
+        src: /tmp/user.zip
+        dest: /app
+        remote_src: yes  
+     
     - name: download the npm
-      ansible.buildin.dnf:
-       name: npm
-       state: installed
+      ansible.builtin.dnf:
+        name: npm
+        state: installed
       
     - name: Copy file with owner and permissions
       ansible.builtin.copy:
-       src: user.service
-       dest: /etc/systemd/system
+        src: user.service
+        dest: /etc/systemd/system
       
     - name: reload the daemon-reload
-      ansible.buildin.service:
-       name: daemon-reload
-      state: reload
+      ansible.builtin.command: systemctl daemon-reload
+
       
     - name: start and enable user
-      ansible.buildin.dnf:
-       name: user
-       state: started
-       enabled: yes
+      ansible.builtin.systemd_service:
+        name: user
+        state: started
+        enabled: yes
       

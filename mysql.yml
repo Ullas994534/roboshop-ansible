@@ -1,10 +1,10 @@
 ---
  - name: create a RoboShop
-   hosts: mysql
+   hosts: 172.31.40.120
    become: true
    tasks:
     - name: set prompt
-      ansible.buildin.command: set-prompt mysql
+      ansible.builtin.command: set-prompt mysql
       
     - name: Install MySQL Server
       dnf:
@@ -18,6 +18,6 @@
         state: started
 
     - name: Set MySQL root password
-      command: mysql_secure_installation --set-root-pass RoboShop@1
+      command: "mysql_secure_installation --set-root-pass RoboShop@1"
 
       
