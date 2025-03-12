@@ -1,0 +1,81 @@
+---
+ - name: create a RoboShop 
+   hosts: cart
+   become: true
+   tasks:
+    - name: set prompt
+      ansible.buildin.command: set-prompt cart
+      
+    - name: Disable existing Node.js module
+      command: dnf module disable nodejs -y
+    
+    - name: Enable Node.js 20 module
+      command: dnf module enable nodejs:20 -y
+
+    - name: Install Node.js
+      dnf:
+        name: nodejs
+        state: present
+
+    - name: Add application user 'roboshop'
+      user:
+        name: roboshop
+        system: yes
+        shell: /sbin/nologin
+        create_home: no
+
+    - name: Create application directory
+      file:
+        path: /app
+        state: directory
+        owner: roboshop
+        group: roboshop
+        mode: '0755'
+
+    - name: Download Cart microservice application code
+      get_url:
+        url: https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip
+        dest: /tmp/cart.zip
+
+    - name: Extract application code
+      unarchive:
+        src: /tmp/cart.zip
+        dest: /app
+        remote_src: yes
+        owner: roboshop
+        group: roboshop
+
+    - name: Install Node.js dependencies
+      command: npm install
+      args:
+        chdir: /app
+
+    - name: Reload systemd daemon
+      command: systemctl daemon-reload
+
+    - name: Enable and Start Cart service
+      systemd:
+        name: cart
+        enabled: yes
+        state: started
+
+    - name: download the mysql content
+      ansible.buildin.get_url:
+       url: https://roboshop-artifacts.s3.amazonaws.com/cart-v3.zip
+       dest: /tmp/cart.zip
+
+    - name: download the npm
+      ansible.buildin.dnf:
+       name: npm
+       state: installed
+
+    - name: reload the daemon-reload
+      ansible.buildin.service:
+       name: daemon-reload
+      state: reload
+      
+    - name: start and enable cart
+      ansible.buildin.dnf:
+       name: cart
+       state: started
+       enabled: yes

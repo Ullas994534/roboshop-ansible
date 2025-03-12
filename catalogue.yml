@@ -1,0 +1,56 @@
+---
+ - name: create the roboshop
+   hosts: catalogure
+   become: true
+   tasks:
+    - name: set prompt
+      ansible.buildin.command: set-prompt catalogue
+     
+    - name: disable the nodejs 
+      ansible.buildin.command:
+       name: dnf module disable nginx -y 
+
+    - name: enable the nodejs 
+      ansible.buildin.command:
+       name: dnf module enable nginx:1.24 -y 
+
+    - name: install the catalogue
+      ansible.buildin.dnf:
+       name: nodejs
+       state: installed
+      
+    - name: add the user with roboshop
+      ansible.buildin.user:
+       name: roboshop
+       state: present
+      
+    - name: Creates directory
+      ansible.builtin.file:
+       path: /app
+       state: present
+        
+    - name: download the catalogure content
+      ansible.buildin.get_url:
+       url: https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip
+       dest: /tmp/catalogue.zip
+        
+    - name: download the npm
+      ansible.buildin.dnf:
+       name: npm
+       state: installed
+      
+    - name: Copy file with owner and permissions
+      ansible.builtin.copy:
+       src: catalogue.service
+       dest: /etc/systemd/system
+      
+    - name: reload the daemon-reload
+      ansible.buildin.service:
+       name: daemon-reload
+       state: reload
+      
+    - name: start and enable catalogue
+      ansible.buildin.dnf:
+       name: catalogue
+       state: started
+       enabled: yes

@@ -1,0 +1,55 @@
+---
+- name: create a RoboShop Payment
+  hosts: payment
+  become: true
+  tasks:
+    - name: set prompt
+      ansible.buildin.command: set-prompt rabbitmq
+
+    - name: Install Python 3, GCC, and Python development libraries
+      dnf:
+        name:
+          - python3
+          - gcc
+          - python3-devel
+        state: present
+
+    - name: Add application user 'roboshop'
+      user:
+        name: roboshop
+        system: yes
+        shell: /sbin/nologin
+        create_home: no
+
+    - name: Create application directory
+      file:
+        path: /app
+        state: directory
+        owner: roboshop
+        group: roboshop
+        mode: '0755'
+
+    - name: Download Payment microservice application code
+      get_url:
+        url: https://roboshop-artifacts.s3.amazonaws.com/payment-v3.zip
+        dest: /tmp/payment.zip
+
+    - name: Extract application code
+      unarchive:
+        src: /tmp/payment.zip
+        dest: /app
+        remote_src: yes
+        owner: roboshop
+        group: roboshop
+
+    - name: Install Python dependencies
+      pip:
+        requirements: /app/requirements.txt
+        executable: pip3
+
+    - name: Create RabbitMQ User 'roboshop'
+      command: rabbitmqctl add_user roboshop roboshop123
+      ignore_errors: yes
+
+    - name: Set permissions for 'roboshop' user
+      command: rabbitmqctl set_permissions -p / roboshop ".*" ".*" ".*"

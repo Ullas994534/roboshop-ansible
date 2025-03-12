@@ -1,0 +1,96 @@
+- name: create a RoboShop 
+  hosts: shipping
+  become: true
+  tasks:
+    - name: set prompt
+      ansible.buildin.command: set-prompt shipping
+
+    - name: Install Maven (which includes Java)
+      dnf:
+        name: maven
+        state: present
+
+    - name: Add application user 'roboshop'
+      user:
+        name: roboshop
+        system: yes
+        shell: /sbin/nologin
+        create_home: no
+
+    - name: Create application directory
+      file:
+        path: /app
+        state: directory
+        owner: roboshop
+        group: roboshop
+        mode: '0755'
+
+    - name: Download Shipping microservice application code
+      get_url:
+        url: https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip
+        dest: /tmp/shipping.zip
+
+    - name: Extract application code
+      unarchive:
+        src: /tmp/shipping.zip
+        dest: /app
+        remote_src: yes
+        owner: roboshop
+        group: roboshop
+
+    - name: Build the application using Maven
+      command: mvn clean package
+      args:
+        chdir: /app
+
+    - name: Rename built JAR file
+      command: mv target/shipping-1.0.jar shipping.jar
+      args:
+        chdir: /app
+    - name: Move built JAR file
+      ansible.builtin.command:
+        cmd: mv /app/target/shipping-1.0.jar /app/shipping.jar
+      args:
+        creates: /app/shipping.jar
+
+    - name: Copy systemd service file
+      ansible.builtin.copy:
+        src: shipping.service
+        dest: /etc/systemd/system/shipping.service
+        mode: '0644'
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: Enable shipping service
+      ansible.builtin.systemd:
+        name: shipping
+        enabled: yes
+
+    - name: Start shipping service
+      ansible.builtin.systemd:
+        name: shipping
+        state: started
+
+    - name: Install MySQL client
+      ansible.builtin.dnf:
+        name: mysql
+        state: present
+
+    - name: Load database schema
+      ansible.builtin.command:
+        cmd: mysql -h <MYSQL-SERVER-IPADDRESS> -uroot -pRoboShop@1 < /app/db/schema.sql
+
+    - name: Create application user in MySQL
+      ansible.builtin.command:
+        cmd: mysql -h <MYSQL-SERVER-IPADDRESS> -uroot -pRoboShop@1 < /app/db/app-user.sql
+
+    - name: Load master data into database
+      ansible.builtin.command:
+        cmd: mysql -h <MYSQL-SERVER-IPADDRESS> -uroot -pRoboShop@1 < /app/db/master-data.sql
+
+    - name: Restart shipping service
+      ansible.builtin.systemd:
+        name: shipping
+        state: restarted

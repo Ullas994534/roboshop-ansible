@@ -1,0 +1,38 @@
+---
+ - name: create the roboshop on mongdb
+   hosts: mongdb
+   become: true
+   tasks:
+  
+ - name: Copy the file 
+   ansible.builtin.copy:
+    src: mongo.repo
+    dest: /etc/dnf.repos.d
+  
+ - name: install the mongdb
+   ansible.buildin.dnf:
+    name: mongdb
+    state: present
+
+ - name: replace the file ip address
+   ansible.builtin.replace:
+    path: /etc/mongdb.conf
+    regexp: '127.0.0.1'
+    replace: '0.0.0.0'
+
+ 
+ - name: start and enable mongdb
+   ansible.buildin.dnf:
+    name: mongdb
+    state: started
+    enabled: yes
+
+ - name: Restart mongdb
+   ansible.buildin.service:
+    name: mongdb
+    state: restarted    
+  
+
+
+ 
+
