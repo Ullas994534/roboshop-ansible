@@ -1,57 +1,72 @@
----
- - name: create the roboshop
+ - name: Configure Catalogue host
    hosts: 172.31.40.150
    become: true
-   tasks:
-     - name: set prompt
-       ansible.builtin.shell: set-prompt catalogue
-     
-     - name: disable the nodejs 
-       ansible.builtin.command:  dnf module disable nodejs -y
- 
+   tasks: 
 
-     - name: enable the nodejs 
+     - name: Set prompt
+       ansible.builtin.shell: set-prompt Catalogue
+
+     - name: Disable nodejs modules first
+       ansible.builtin.command: dnf module disable nodejs -y
+    
+     - name: Enable nodejs modules
        ansible.builtin.command: dnf module enable nodejs:20 -y
 
-
-     - name: install the catalogue
+     - name: Install nodejs:20 on frontend
        ansible.builtin.dnf:
          name: nodejs
          state: installed
-     - name: add the user with roboshop
+      
+     - name: Create a user 'roboshop' with a home directory
        ansible.builtin.user:
          name: roboshop
-         state: present
       
-     - name: Creates directory
+     - name: Create a directory if it does not exist
        ansible.builtin.file:
-         path: /app
+         path: /app 
          state: directory
-        
-     - name: download the catalogure content
+
+     - name: Copy mongo.repo file to repo root
+       ansible.builtin.template:
+         src: mongo.repo
+         dest: /etc/yum.repos.d/mongo.repo
+
+     - name: Copy catalogue.service file to /etc/systemd/system/
+       ansible.builtin.template:
+         src: catalogue.service
+         dest: /etc/systemd/system/catalogue.service
+
+     - name: Download catalogue 
        ansible.builtin.get_url:
          url: https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip
-         dest: /tmp/catalogue.zip
-     - name: extract the catalogue 
+         dest: /tmp/catalogue-v3.zip
+
+     - name: Extract catalogue into /usr/share/nginx/html
        ansible.builtin.unarchive:
-         src: /tmp/catalogue.zip
+         src:  /tmp/catalogue-v3.zip
          dest: /app
-         remote_src: yes  
-     - name: download the npm
-       ansible.builtin.dnf:
-         name: npm
-         state: installed
-      
-     - name: Copy file with owner and permissions
-       ansible.builtin.copy:
-         src: catalogue.service
-         dest: /etc/systemd/system
-      
-     - name: reload the daemon-reload
+         remote_src: yes
+
+     - name: Install npm on catalogue
+       ansible.builtin.command: npm install
+       args:
+         chdir: /app
+          
+     - name: Install mongodb-mongosh
+       ansible.builtin.dnf: 
+         name: mongodb-mongosh
+         state: installed   
+
+
+     - name: Reload service daemon-reload, in all cases
        ansible.builtin.command: systemctl daemon-reload
-      
-     - name: start and enable catalogue
+         
+   
+     - name: Start the service
        ansible.builtin.systemd_service:
-         name: catalogue
+         name: catalogue.service
          state: started
          enabled: yes
+
+     - name: Load Master Data 
+       ansible.builtin.shell: mongosh --host 172.31.41.246 </app/db/master-data.js

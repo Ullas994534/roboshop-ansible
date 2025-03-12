@@ -1,5 +1,5 @@
  - name: Setup Payment host
-   hosts: 172.31.40.142
+   hosts: 172.31.46.156
    become: true
    tasks:
      - name: Set prompt

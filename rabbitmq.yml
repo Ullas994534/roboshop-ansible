@@ -1,5 +1,5 @@
 - name: Setup RabbitMQ Host
-  hosts: 172.31.42.187
+  hosts: 172.31.43.88
   become: true
   tasks:
     - name: Set prompt

@@ -1,5 +1,5 @@
 - name: Setup Dispatch host
-  hosts: 172.31.40.15
+  hosts: 172.31.46.248
   become: true
   tasks: 
 

@@ -1,0 +1,22 @@
+---
+- name: Restart different services on multiple hosts
+  hosts: 172.31.38.18,172.31.41.246,172.31.40.150,172.31.40.94,172.31.43.158,172.31.40.239,172.31.34.175,172.31.39.232,172.31.43.88,172.31.46.156,172.31.46.248,
+  become: yes
+  tasks:
+    - name: Restart services on specific hosts
+      service:
+        name: "{{ service_name }}"
+        state: restarted
+      when: 
+        - (ansible_host == "172.31.38.18" and service_name == "nginx")
+        - (ansible_host == "172.31.41.246" and service_name == "mongod")
+        - (ansible_host == "172.31.40.150" and service_name == "catalogue")
+        - (ansible_host == "172.31.40.94" and service_name == "redis")
+        - (ansible_host == "172.31.43.158" and service_name == "user")
+        - (ansible_host == "172.31.40.239" and service_name == "cart")
+        - (ansible_host == "172.31.34.175" and service_name == "mysql")
+        - (ansible_host == "172.31.39.232" and service_name == "shipping")
+        - (ansible_host == "172.31.43.88" and service_name == "rabbitmq-server")
+        - (ansible_host == "172.31.46.156" and service_name == "payment")
+        - (ansible_host == "172.31.46.248" and service_name == "dispatch")
+

@@ -1,29 +1,36 @@
----
- - name: create a RoboShop Redis
-   hosts: 172.31.42.103
+ - name: Disable redis -enable modules and install
+   hosts: 172.31.40.94 
    become: true
-   tasks:
-     - name: set prompt
-       ansible.builtin.command: set-prompt redis
-     - name: Disable existing Redis module
-       command: dnf module disable redis -y
+   tasks: 
+     - name: Disable redis modules first
+       ansible.builtin.command: dnf module disable redis -y
+    
+     - name: Enable redis modules
+       ansible.builtin.command: dnf module enable redis:7 -y
 
-     - name: Enable Redis 7 module
-       command: dnf module enable redis:7 -y
-
-     - name: Install Redis
-       dnf:
+     - name: Install redis on redis
+       ansible.builtin.dnf:
          name: redis
          state: installed
 
-     - name: Update Redis listen address to allow external access
-       replace:
+
+     
+     - name: Replace  127.0.0.1 with 0.0.0.0
+       ansible.builtin.replace:
          path: /etc/redis/redis.conf
-         regexp: 'bind 127.0.0.1'
-         replace: 'bind 0.0.0.0'
+         regexp: '127.0.0.1'
+         replace: '0.0.0.0'    
 
+     - name: Replace protected-mode from yes to no in /etc/redis/redis.conf
+       ansible.builtin.replace:
+         path: /etc/redis/redis.conf
+         regexp: 'protected-mode yes'
+         replace: 'protected-mode no'    
 
-     - name: start and enable redis
+     - name: Reload service daemon-reload, in all cases
+       ansible.builtin.command: systemctl daemon-reload
+   
+     - name: Start the service
        ansible.builtin.systemd_service:
          name: redis
          state: started
